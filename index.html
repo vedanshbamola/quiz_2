@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vedansh's Maths Quiz</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      font-family: "Trebuchet MS", Arial, sans-serif;
+      color: #242047;
+      background:
+        radial-gradient(circle at 15% 15%, #ffe7a8 0 8%, transparent 9%),
+        radial-gradient(circle at 88% 82%, #c4f1de 0 10%, transparent 11%),
+        linear-gradient(135deg, #fff4dc, #e4f4ff);
+    }
+
+    .card {
+      width: min(100%, 560px);
+      padding: 32px;
+      border: 3px solid white;
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 18px 50px rgba(48, 57, 100, 0.16);
+    }
+
+    .topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .badge, .score {
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 800;
+    }
+
+    .badge { background: #fff0c9; color: #805500; }
+    .score { background: #e7f8ee; color: #18754a; }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.8rem, 6vw, 2.5rem);
+      line-height: 1.1;
+    }
+
+    .subtitle { margin: 0 0 24px; color: #6b6981; }
+
+    .progress-track {
+      height: 10px;
+      margin-bottom: 26px;
+      overflow: hidden;
+      border-radius: 10px;
+      background: #eeeef5;
+    }
+
+    .progress {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ff9c66, #8f7cff);
+      transition: width 0.35s ease;
+    }
+
+    .question-label {
+      margin: 0 0 8px;
+      color: #807b9a;
+      font-size: 0.85rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h2 { margin: 0 0 20px; font-size: 1.45rem; }
+
+    .options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .option {
+      padding: 15px;
+      border: 2px solid #e7e6f0;
+      border-radius: 15px;
+      background: white;
+      color: #292640;
+      font: inherit;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+      transition: 0.18s ease;
+    }
+
+    .option:hover:not(:disabled) {
+      border-color: #9585ff;
+      background: #f7f5ff;
+      transform: translateY(-2px);
+    }
+
+    .option:disabled { cursor: default; }
+    .option.correct { border-color: #4abe83; background: #eaf9f0; }
+    .option.wrong { border-color: #f17b7b; background: #fff0f0; }
+
+    .feedback {
+      min-height: 28px;
+      margin: 16px 0 8px;
+      font-weight: 800;
+    }
+
+    .feedback.good { color: #18814f; }
+    .feedback.bad { color: #bd4545; }
+
+    .next, .restart {
+      width: 100%;
+      margin-top: 8px;
+      padding: 14px;
+      border: 0;
+      border-radius: 14px;
+      background: #6254d9;
+      color: white;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .next:hover, .restart:hover { background: #4e41c1; }
+    .next:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .hidden { display: none; }
+
+    .result {
+      padding: 22px 0 8px;
+      text-align: center;
+    }
+
+    .result-icon { font-size: 3rem; }
+    .result h2 { margin: 10px 0; font-size: 2rem; }
+    .result p { color: #6b6981; }
+
+    footer {
+      margin-top: 24px;
+      color: #858198;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    @media (max-width: 420px) {
+      .card { padding: 23px; }
+      .options { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="topline">
+      <span class="badge">✨ Maths Challenge</span>
+      <span class="score" id="score">Score: 0</span>
+    </div>
+
+    <section id="quiz">
+      <h1>Vedansh's Maths Quiz</h1>
+      <p class="subtitle">Ready to test your maths skills?</p>
+
+      <div class="progress-track" aria-label="Quiz progress">
+        <div class="progress" id="progress"></div>
+      </div>
+
+      <p class="question-label" id="questionNumber"></p>
+      <h2 id="questionText"></h2>
+      <div class="options" id="options"></div>
+      <p class="feedback" id="feedback" aria-live="polite"></p>
+      <button class="next" id="nextButton" disabled>Next question →</button>
+    </section>
+
+    <section class="result hidden" id="result">
+      <div class="result-icon">🎉</div>
+      <h2>Quiz complete!</h2>
+      <p id="finalScore"></p>
+      <button class="restart" onclick="restartQuiz()">Play again</button>
+    </section>
+
+    <footer>Made with 💛 by Vedansh</footer>
+  </main>
+
+  <script>
+    const questions = [
+      {
+        text: "What is 24 ÷ 4?",
+        options: ["7", "4", "8", "6"],
+        answer: 3
+      },
+      {
+        text: "What is 3378 + 2267?",
+        options: ["5645", "5893", "6358", "6515"],
+        answer: 0
+      },
+      {
+        text: "What is 7786 ÷ 2?",
+        options: ["3908", "4492", "3893", "4567"],
+        answer: 2
+      },
+      {
+        text: "What is 6733 − 1056?",
+        options: ["5692", "5677", "5844", "5857"],
+        answer: 1
+      }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+    let answered = false;
+
+    const scoreEl = document.getElementById("score");
+    const progressEl = document.getElementById("progress");
+    const questionNumberEl = document.getElementById("questionNumber");
+    const questionTextEl = document.getElementById("questionText");
+    const optionsEl = document.getElementById("options");
+    const feedbackEl = document.getElementById("feedback");
+    const nextButton = document.getElementById("nextButton");
+
+    function showQuestion() {
+      answered = false;
+      const question = questions[currentQuestion];
+
+      questionNumberEl.textContent =
+        `Question ${currentQuestion + 1} of ${questions.length}`;
+      questionTextEl.textContent = question.text;
+      progressEl.style.width =
+        `${(currentQuestion / questions.length) * 100}%`;
+      feedbackEl.textContent = "";
+      feedbackEl.className = "feedback";
+      nextButton.disabled = true;
+      nextButton.textContent =
+        currentQuestion === questions.length - 1
+          ? "See my results →"
+          : "Next question →";
+
+      optionsEl.innerHTML = "";
+      question.options.forEach((option, index) => {
+        const button = document.createElement("button");
+        button.className = "option";
+        button.textContent = `${String.fromCharCode(97 + index)}) ${option}`;
+        button.addEventListener("click", () => chooseAnswer(index));
+        optionsEl.appendChild(button);
+      });
+    }
+
+    function chooseAnswer(selectedIndex) {
+      if (answered) return;
+      answered = true;
+
+      const question = questions[currentQuestion];
+      const buttons = [...optionsEl.querySelectorAll(".option")];
+      buttons.forEach(button => button.disabled = true);
+
+      if (selectedIndex === question.answer) {
+        score++;
+        scoreEl.textContent = `Score: ${score}`;
+        feedbackEl.textContent = "Correct! Great job! 🌟";
+        feedbackEl.classList.add("good");
+        buttons[selectedIndex].classList.add("correct");
+      } else {
+        feedbackEl.textContent =
+          `Oops, that's not right. The answer is ${question.options[question.answer]}.`;
+        feedbackEl.classList.add("bad");
+        buttons[selectedIndex].classList.add("wrong");
+        buttons[question.answer].classList.add("correct");
+      }
+
+      nextButton.disabled = false;
+    }
+
+    nextButton.addEventListener("click", () => {
+      currentQuestion++;
+
+      if (currentQuestion < questions.length) {
+        showQuestion();
+      } else {
+        document.getElementById("quiz").classList.add("hidden");
+        document.getElementById("result").classList.remove("hidden");
+        document.getElementById("finalScore").textContent =
+          `Your final score is ${score} out of ${questions.length}. ${
+            score === questions.length ? "Perfect score!" : "Thanks for playing!"
+          }`;
+        progressEl.style.width = "100%";
+      }
+    });
+
+    function restartQuiz() {
+      currentQuestion = 0;
+      score = 0;
+      scoreEl.textContent = "Score: 0";
+      document.getElementById("result").classList.add("hidden");
+      document.getElementById("quiz").classList.remove("hidden");
+      showQuestion();
+    }
+
+    showQuestion();
+  </script>
+</body>
+</html>
